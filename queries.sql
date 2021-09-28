@@ -51,11 +51,11 @@ INSERT INTO "Album" ("Title","IsExplicit","ReleaseDate","BandId")
  
  -- 4
  
-INSERT INTO "Song" ("TrackNumber", "Title", "Duration","AlbumId")
-	VALUES (11, 'Stole Dance', (5*60 + 15), 1);
-    
-INSERT INTO "Song" ("TrackNumber", "Title", "Duration","AlbumId")
-	VALUES (9, 'Coccoon', (4*60 + 15), 2);
+INSERT INTO "Album" ("Title","IsExplicit","ReleaseDate","BandId")
+  	VALUES ('Sadnecessary', false, '2013-10-01', 1);
+ 
+ INSERT INTO "Album" ("Title","IsExplicit","ReleaseDate","BandId")
+  	VALUES ('Blossom', false, '2017-03-17', 1);
 -- 5
 UPDATE "Band" SET "IsSigned" = true WHERE "Name" = 'Milky Chance';
  
