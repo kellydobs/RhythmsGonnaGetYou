@@ -17,18 +17,23 @@ namespace RhythmsGonnaGetYou
       
 
       List<Band> bandsList = context.Band.Include(Band => Band.Albums).ThenInclude(Album => Album.Songs).ToList();
+      Band bandByName = null;
+
+
 
       bool keepGoing = true;
      
       while (keepGoing)
       {
         var input = PromptInput("(C)reate, (V)iew, (U)pdate a band or (Q)uit? ").ToUpper();
+        var input = PromptInput('\n' + "(C)reate, (V)iew, (U)pdate a band, or (Q)uit? ").ToUpper();
         
         switch (input)
         {
           case "C":
             input = PromptInput("Create a (B)and, (A)lbum, or (S)ong? ").ToUpper();
-
+            input = PromptInput('\n' + "Create a (B)and, (A)lbum, or (S)ong? ").ToUpper();
+           
             switch (input)
             {
               case "B":
@@ -40,9 +45,40 @@ namespace RhythmsGonnaGetYou
                  case "A":
                  Album newAlbum = CreateAlbum();
 
+                 input = PromptInput("What is the name of the band which produced the album?");
+                 bandByName = context.Band.FirstOrDefault(b => b.Name.ToUpper().Contains(input.ToUpper()));
+
+                 if (bandByName != null)
+                 {
+                   Album newAlbum = CreateAlbum();
+                   newAlbum.BandId = bandByName.Id;
+                   context.Add(newAlbum);
+                   context.SaveChanges(); 
+                 }
+                 else
+                 {
+                   Console.WriteLine("That band does not exist..");
+                 }
+
                  break;
 
           case "S":
+                  input = PromptInput("What is the name of the album which contants the song?");
+                  Album albumByName = context.Album.FirstOrDefault(a => a.Title.ToUpper().Contains(input.ToUpper()));
+                  
+                  if (albumByName != null)
+                  {
+                    Song newSong = CreateSong();
+                    newSong.AlbumId = albumByName.Id;
+                    context.Add(newSong);
+                    context.SaveChanges();
+                  }
+                  else
+                  {
+                    Console.WriteLine("That album does not exist....");
+                  }
+                  break;
+            }
 
 
 
@@ -51,11 +87,126 @@ namespace RhythmsGonnaGetYou
 
           case "V":
 
+          input = PromptInput('\n' + "Select a number: \n" +
+
+          "1. View all Bands\n" +
+          "2. View all albums for a band\n" +
+          "3. View all bands that are signed\n" +
+          "4. View all bands that are not signed\n" +
+          "5. View all albums by ordered by Release Date" + '\n');
+
+          List<Band> bandsList = context.Band.Include(Band => Band.Albums).ThenInclude(Album => Album.Songs).ToList();
+
+          switch (input)
+          {
+            case "1":
+
+            Console.WriteLine(String.Format(("{0,-20} | {1,-20} | {2,-8} | {3,-20}"), "Band Name", "Country of Origin", "Numbers", "Website"));
+            Console.WriteLine("____________________________________________________________________");
+
+            //view all bands
+            foreach (Band b in bandsList)
+            {
+              Console.WriteLine(String.Format(("{0,-20} | {1,-20} | {2,-8} | {3,-20}"), b.Name, b.CountryOfOrigin, b.NumberOfMembers, b.Website));
+            }
+            break;
+
+
+            case "2":
+
+            input = PromptInput("What is the name of the band?");
+
+            bandByName = context.Band.FirstOrDefault(b => b.Name.ToUpper().Contains(input.ToUpper()));
+
+            if (bandByName != null)
+          
+              {
+                Console.WriteLine($"\nAlbums by {bandByName.Name}");
+                Console.WriteLine(String.Format(("{0,-20} | {1,-20} | {2,-20}"), "Album Title", "Explicit?", "Release Date"));
+                Console.WriteLine("____________________________________________________________");
+                foreach (Album a in bandByName.Albums)
+                {
+                  Console.WriteLine(String.Format(("{0,-20} | {1,-20} | {2,-20}"), a.Title, a.IsExplicit, a.ReleaseDate));
+                }
+              }
+                else
+                {
+                  Console.WriteLine("Could not find band...");
+                }
+
+            
+            break;
+
+            case "3":
+            bandsList = bandsList.Where(b => b.Signed).ToList();
+
+            Console.WriteLine("Bands that are signed: ");
+
+            foreach(Band b in bandsList)
+            {
+              Console.WriteLine(b.Name);
+
+            }
+              Console.WriteLine();
+
+            break;
+
+
+            case "4":
+            bandsList = bandsList.Where(b => !b.Signed).ToList();  
+
+            Console.WriteLine("Bands that are not signed: ");
+
+            foreach (Band b in bandsList)
+            {
+              Console.WriteLine(b.Name);
+            }
+              Console.WriteLine();
+
+            break;
+
+
+            case "5":
+              List<Album> albumsList = context.Album.OrderBy(album => album.ReleaseDate).ToList();
+
+            foreach (Album a in albumsList)
+            {
+              Console.WriteLine($"{a.Title} was released on {a.ReleaseDate}");
+            }
+              Console.WriteLine();
+
+            break;
+
+            
+
+          }
+
 
           break;
 
           case "U":
+          //find a band and update is signed
+          input = PromptInput("What is the name of the band you want to sign/release?");
 
+          bandByName = context.Band.FirstOrDefault(b => b.Name.ToUpper().Contains(input.ToUpper()));
+
+          if (bandByName != null)
+          {
+            var isSignedOrNah = (bandByName.Signed ? "signed" : "not signed" );
+            Console.WriteLine($"{bandByName} is currently {isSignedOrNah}");
+            input = PromptInput($"Would you like ot (S)ign or (R)elease {bandByName.Name}");
+            bandByName.Signed = (input.ToUpper() == "S" ? true : false);
+            context.Update(bandByName);
+            context.SaveChanges();
+            isSignedOrNah = (bandByName.Signed ? "signed" : "not signed");
+            Console.WriteLine($"{bandByName.Name} is now {isSignedOrNah}");
+
+          }
+          else
+          {
+            Console.WriteLine("Could not find band by that name....");
+
+          }
           break;
 
           default:
@@ -79,11 +230,11 @@ namespace RhythmsGonnaGetYou
       //     {
       //       Console.WriteLine($"The Song {s.Title} is an album {a.Title} by the band {b.Name}");
       //     }
-        }
-      }
+        
+      
     
 
-
+    }
     public static Band CreateBand()
     {
       var newBand = new Band
@@ -111,10 +262,16 @@ namespace RhythmsGonnaGetYou
         };
 
       return newAlbum;
+    }
 
      public static Song CreateSong()
     {
-      Song newSong = new Song();
+      Song newSong = new Song
+      {
+        TrackNumber = int.Parse(PromptInput("what is the track number? ")),
+        Title = PromptInput("New song name:  "),
+        Duration = PromptInput("What is the duration of the song?")
+      };
       return newSong;
     }
 
@@ -187,5 +344,5 @@ namespace RhythmsGonnaGetYou
     public Album Album { get; set; }
   }
 
-
 }
+
